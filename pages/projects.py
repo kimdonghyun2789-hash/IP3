@@ -97,6 +97,22 @@ def _render_detail(project: dict) -> None:
                 st.session_state.result_tab = "결과"
                 layout.goto("review_result", current_case_id=c["id"])
 
+        layout.section_label("케이스 추가 (프로젝트 미지정 검토 케이스)")
+        unassigned = [c for c in db.list_review_cases() if not c.get("project_id")]
+        if not unassigned:
+            st.caption("프로젝트에 추가할 미지정 케이스가 없습니다.")
+        for c in unassigned:
+            ac = st.columns([5, 1.2])
+            ac[0].markdown(
+                f"<span class='ip3-meta' style='font-weight:600'>{c.get('title','')}</span> "
+                + badges.status_pill(c.get("status", "")),
+                unsafe_allow_html=True,
+            )
+            if ac[1].button("추가", key=f"addcase_{c['id']}", use_container_width=True):
+                db.update_review_case(c["id"], project_id=project["id"])
+                layout.flash("케이스가 프로젝트에 추가되었습니다.")
+                st.rerun()
+
         memo = st.text_area(
             "프로젝트 메모", value=project.get("memo", "") or "", key="proj_memo", height=80
         )

@@ -11,7 +11,10 @@ def render() -> None:
     with st.sidebar:
         st.markdown(
             "<div class='ip3-brand'>IP<span>3</span></div>"
-            "<div class='ip3-tagline'>아이디어 기반 특허 검토 플랫폼</div>",
+            "<div class='ip3-cube'>IP CUBE</div>"
+            "<div class='ip3-tagline'>"
+            "Intellectual Property<br>× Idea-to-Patent<br>× Intelligence Platform"
+            "</div>",
             unsafe_allow_html=True,
         )
 

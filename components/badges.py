@@ -18,13 +18,17 @@ JUDGMENT_COLORS = {
     "확인필요": ("#eef1f5", "#52606d"),
 }
 
+# Country codes are shown as plain text chips. Flag emojis are intentionally
+# NOT used: on Windows the regional-indicator characters render as the two
+# country letters, which duplicated the label (e.g. "KR KR").
 COUNTRY_LABELS = {
-    "KR": "🇰🇷 KR",
-    "US": "🇺🇸 US",
-    "CN": "🇨🇳 CN",
-    "JP": "🇯🇵 JP",
-    "EP": "🇪🇺 EP",
-    "": "🌐 —",
+    "KR": "KR",
+    "US": "US",
+    "CN": "CN",
+    "JP": "JP",
+    "EP": "EP",
+    "WO": "WO",
+    "": "—",
 }
 
 
@@ -49,7 +53,8 @@ def judgment(status: str) -> str:
 
 
 def country(code: str) -> str:
-    label = COUNTRY_LABELS.get((code or "").upper(), f"🌐 {code}")
+    code = (code or "").upper()
+    label = COUNTRY_LABELS.get(code, code or "—")
     return _chip(label, "#eef2f7", "#334e68")
 
 

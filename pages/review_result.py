@@ -72,6 +72,25 @@ def _render_case_panel(case: dict, patents: list[dict]) -> None:
             unsafe_allow_html=True,
         )
 
+        layout.section_label("프로젝트")
+        projects = db.list_projects()
+        opts = ["(프로젝트 미지정)"] + [p["name"] for p in projects]
+        name_to_id = {p["name"]: p["id"] for p in projects}
+        cur_pid = case.get("project_id")
+        cur_idx = 0
+        for i, p in enumerate(projects):
+            if p["id"] == cur_pid:
+                cur_idx = i + 1
+        choice = st.selectbox(
+            "프로젝트", opts, index=cur_idx, key=f"case_proj_{case['id']}",
+            label_visibility="collapsed",
+        )
+        new_pid = name_to_id.get(choice)
+        if new_pid != cur_pid:
+            db.update_review_case(case["id"], project_id=new_pid)
+            layout.flash("프로젝트가 변경되었습니다.")
+            st.rerun()
+
         layout.section_label("상태")
         if case.get("is_temporary"):
             st.markdown(badges.status_pill("임시저장됨"), unsafe_allow_html=True)
