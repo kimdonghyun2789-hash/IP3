@@ -66,6 +66,11 @@ pip install google-generativeai    # Gemini
 pip install anthropic              # Anthropic
 ```
 
+- **AI 모델**: 설정 → AI 설정의 *AI 모델* 칸은 비워두면 권장 모델을 자동 사용합니다
+  (Gemini는 사용 가능한 모델을 자동 탐색, 기본 `gemini-2.0-flash` / OpenAI `gpt-4o-mini`).
+  특정 모델을 쓰려면 직접 입력하세요.
+- AI 호출에 실패해도 앱은 중단되지 않고 **내장 휴리스틱 비교**로 자동 전환됩니다.
+
 ## 5. 데이터 저장 위치
 
 - SQLite DB: `data/ip3.db`

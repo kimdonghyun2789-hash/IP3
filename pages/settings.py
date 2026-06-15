@@ -55,10 +55,11 @@ def _api_settings() -> None:
         st.markdown(f"**AI Provider:** {'🟢' if a_ok else '🔴'} {a_msg}")
 
     st.markdown("<hr/>", unsafe_allow_html=True)
-    k_state = "🟢 연결됨" if config.has_kiprisplus() else "⚪ 미연결 (샘플 데이터 모드)"
-    a_state = "🟢 연결됨" if config.has_ai() else "⚪ 미연결 (휴리스틱 비교)"
+    k_state = "🟢 키 입력됨" if config.has_kiprisplus() else "⚪ 미입력 (샘플 데이터 모드)"
+    a_state = "🟢 키 입력됨" if config.has_ai() else "⚪ 미입력 (휴리스틱 비교)"
     st.markdown(f"**KIPRISPlus:** {k_state}")
     st.markdown(f"**AI Provider:** {a_state}")
+    st.caption("실제 연결 가능 여부는 위의 **연결 테스트**로 확인하세요.")
 
 
 def _search_settings() -> None:
@@ -98,6 +99,10 @@ def _ai_settings() -> None:
     ai_key = st.text_input(
         "AI API Key", value=config.get("ai_api_key", ""), type="password", key="set_aikey2",
     )
+    ai_model = st.text_input(
+        "AI 모델 (선택)", value=config.get("ai_model", ""), key="set_aimodel",
+        placeholder="비워두면 권장 모델 자동 사용 (예: gemini-2.0-flash, gpt-4o-mini)",
+    )
 
     layout.section_label("비교분석 기본 항목")
     fields = ["유사한 점", "차이점", "확인할 점", "확인 위치", "원문 근거", "판단 상태"]
@@ -111,6 +116,7 @@ def _ai_settings() -> None:
     if cols[0].button("저장", type="primary", key="ai_save"):
         config.set("ai_provider", provider)
         config.set("ai_api_key", ai_key.strip())
+        config.set("ai_model", ai_model.strip())
         config.set("ai_fields", ",".join(chosen))
         layout.flash("AI 설정 저장됨")
         st.rerun()
