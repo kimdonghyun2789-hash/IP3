@@ -253,15 +253,57 @@ def search_patents(
 
 
 def test_connection() -> tuple[bool, str]:
-    """Lightweight connectivity check for the Settings screen."""
-    if not config.has_kiprisplus():
+    """Auto-detect a working KIPRISPlus config and save it.
+
+    Tries the known service-path / key-parameter combinations, and on success
+    stores ``kipris_service`` and ``kipris_key_param`` in settings so later calls
+    use the right values. Designed to be driven by the Settings screen button —
+    no command line needed.
+    """
+    key = config.get_kiprisplus_key()
+    if not key:
         return False, "미연결: API Key가 설정되지 않았습니다."
-    try:
-        items = search_domestic_patents("전기", top_n=1)
-        return True, f"연결됨 (서비스: {_service()})" + (
-            "" if items else " · 결과 0건"
-        )
-    except requests.RequestException as exc:
-        return False, f"오류: 네트워크 연결 실패 ({exc.__class__.__name__})"
-    except KiprisError as exc:
-        return False, f"오류: {exc}"
+
+    combos = [
+        ("patUtiliInfoSearchSevice", "accessKey"),
+        ("patUtiliInfoSearchSevice", "ServiceKey"),
+        ("patUtilityInfoSearchService", "accessKey"),
+        ("patUtilityInfoSearchService", "ServiceKey"),
+    ]
+    last_detail = ""
+    for service, key_param in combos:
+        url = f"{BASE_URL}/{service}/getWordSearch"
+        params = {"word": "전기", "numOfRows": 1, "pageNo": 1, key_param: key}
+        try:
+            r = requests.get(url, params=params, timeout=TIMEOUT)
+        except requests.RequestException as exc:
+            last_detail = f"네트워크 오류({exc.__class__.__name__})"
+            continue
+        try:
+            root = ET.fromstring(r.content)
+        except ET.ParseError:
+            last_detail = f"HTTP {r.status_code} · {r.text[:120].strip()}"
+            continue
+        # Check for an explicit error code with no items.
+        items = _iter_items(root)
+        codes = [
+            e.text.strip()
+            for e in root.iter()
+            if _local(e.tag) in ("resultCode", "successYN") and e.text
+        ]
+        msgs = [
+            e.text.strip()
+            for e in root.iter()
+            if _local(e.tag) in ("resultMsg", "message") and e.text
+        ]
+        bad = codes and codes[0].lower() not in {"00", "000", "0", "success", "ok", "y", "true"}
+        if items or (not bad and root is not None and not msgs):
+            config.set("kipris_service", service)
+            config.set("kipris_key_param", key_param)
+            return True, f"연결됨 · 서비스 {service}, 파라미터 {key_param}"
+        last_detail = f"code={codes[0] if codes else '?'} msg={msgs[0] if msgs else '?'}"
+
+    return False, (
+        "오류: 동작하는 설정을 찾지 못했습니다. 키/권한을 확인하세요. "
+        f"(마지막 응답: {last_detail})"
+    )
