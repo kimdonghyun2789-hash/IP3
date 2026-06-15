@@ -1,13 +1,16 @@
 @echo off
 chcp 65001 >nul
 title Build IP3 EXE
-cd /d %~dp0
+cd /d "%~dp0"
 
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install pyinstaller
+set "PYEXE=python"
+where py >nul 2>nul && set "PYEXE=py"
 
-pyinstaller ^
+%PYEXE% -m pip install --upgrade pip
+%PYEXE% -m pip install -r requirements.txt
+%PYEXE% -m pip install pyinstaller
+
+%PYEXE% -m PyInstaller ^
   --noconfirm ^
   --onefile ^
   --name IP3 ^
@@ -16,6 +19,6 @@ pyinstaller ^
   app_launcher.py
 
 echo.
-echo [IP3] 빌드가 끝나면 dist\IP3.exe 가 생성됩니다.
-echo [IP3] 실행 시 app.py, pages, components 등 소스 폴더가 함께 있어야 합니다.
+echo [IP3] Build done. The executable is at dist\IP3.exe
+echo [IP3] Keep IP3.exe next to the source folders (app.py, pages, components, ...).
 pause
