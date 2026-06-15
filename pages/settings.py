@@ -31,35 +31,29 @@ def render() -> None:
 # ---------------------------------------------------------------------------
 def _api_settings() -> None:
     st.caption("KIPRISPlus API Key는 특허 검색 및 상세정보 조회에 사용됩니다.")
-    st.caption("AI API Key는 선택 특허 비교분석에 사용됩니다.")
+    st.caption("AI API Key는 'AI 설정' 탭에서 입력합니다.")
 
     kipris = st.text_input(
         "KIPRISPlus API Key", value=config.get("kiprisplus_api_key", ""),
         type="password", key="set_kipris",
     )
-    ai_key = st.text_input(
-        "AI API Key", value=config.get("ai_api_key", ""), type="password", key="set_aikey1",
-    )
 
     cols = st.columns([1, 1, 4])
     if cols[0].button("저장", type="primary", key="api_save"):
         config.set("kiprisplus_api_key", kipris.strip())
-        config.set("ai_api_key", ai_key.strip())
-        layout.flash("API 설정 저장됨")
+        layout.flash("KIPRISPlus API Key 저장됨")
         st.rerun()
     if cols[1].button("연결 테스트", key="api_test"):
         with st.spinner("연결을 확인하고 있습니다…"):
             k_ok, k_msg = kiprisplus_client.test_connection()
-            a_ok, a_msg = ai_client.test_connection()
         st.markdown(f"**KIPRISPlus:** {'🟢' if k_ok else '🔴'} {k_msg}")
-        st.markdown(f"**AI Provider:** {'🟢' if a_ok else '🔴'} {a_msg}")
 
     st.markdown("<hr/>", unsafe_allow_html=True)
     k_state = "🟢 키 입력됨" if config.has_kiprisplus() else "⚪ 미입력 (샘플 데이터 모드)"
     a_state = "🟢 키 입력됨" if config.has_ai() else "⚪ 미입력 (휴리스틱 비교)"
     st.markdown(f"**KIPRISPlus:** {k_state}")
-    st.markdown(f"**AI Provider:** {a_state}")
-    st.caption("실제 연결 가능 여부는 위의 **연결 테스트**로 확인하세요.")
+    st.markdown(f"**AI Provider:** {a_state}  ·  키 입력은 'AI 설정' 탭")
+    st.caption("실제 연결 가능 여부는 위의 **연결 테스트**(KIPRISPlus), 'AI 설정' 탭의 **연결 테스트**(AI)로 확인하세요.")
 
 
 def _search_settings() -> None:
