@@ -1,0 +1,16 @@
+# IP3 Streamlit configuration
+# Hide the automatic multipage navigation; IP3 uses its own router.
+[client]
+showSidebarNavigation = false
+toolbarMode = "minimal"
+
+[server]
+headless = true
+
+[theme]
+base = "light"
+primaryColor = "#2563EB"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6FB"
+textColor = "#1F2933"
+font = "sans serif"

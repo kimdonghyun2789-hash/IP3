@@ -1,0 +1,11 @@
+# IP3 - dependencies
+streamlit>=1.32
+requests>=2.31
+reportlab>=4.0
+openpyxl>=3.1
+python-dotenv>=1.0
+
+# Optional AI providers (install only the one you use)
+# openai>=1.0
+# google-generativeai>=0.5
+# anthropic>=0.25

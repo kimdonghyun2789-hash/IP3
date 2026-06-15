@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+data/ip3.db
+data/exports/*
+!data/exports/.gitkeep
+build/
+dist/
+*.spec
+.venv/
+venv/
