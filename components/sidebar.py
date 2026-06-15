@@ -10,10 +10,12 @@ from utils import config, db
 def render() -> None:
     with st.sidebar:
         st.markdown(
-            "<div class='ip3-brand'>IP<span>3</span></div>"
-            "<div class='ip3-cube'>IP CUBE</div>"
+            "<div class='ip3-brand'>IP<sup>3</sup></div>"
+            "<div class='ip3-brand-sub'>IP CUBE</div>"
             "<div class='ip3-tagline'>"
-            "Intellectual Property<br>× Idea-to-Patent<br>× Intelligence Platform"
+            "<div><b>I</b>ntellectual Property</div>"
+            "<div><b>I</b>dea-to-Patent</div>"
+            "<div><b>I</b>ntelligence Platform</div>"
             "</div>",
             unsafe_allow_html=True,
         )

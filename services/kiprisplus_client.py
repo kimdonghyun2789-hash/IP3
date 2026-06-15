@@ -26,7 +26,9 @@ from services import sample_data
 from utils import config
 
 BASE_URL = "http://plus.kipris.or.kr/openapi/rest"
-DEFAULT_SERVICE = "patUtiliInfoSearchSevice"
+DEFAULT_SERVICE = "patUtiModInfoSearchSevice"
+DEFAULT_SEARCH_OP = "freeSearchInfo"
+DEFAULT_DETAIL_OP = "getBibliographyDetailInfoSearch"
 TIMEOUT = 20
 
 
@@ -39,6 +41,10 @@ class KiprisError(Exception):
 # ---------------------------------------------------------------------------
 def _service() -> str:
     return config.get("kipris_service", DEFAULT_SERVICE) or DEFAULT_SERVICE
+
+
+def _search_op() -> str:
+    return config.get("kipris_search_op", DEFAULT_SEARCH_OP) or DEFAULT_SEARCH_OP
 
 
 def _key_param() -> str:
@@ -141,8 +147,14 @@ def normalize_patent_result(item: ET.Element, country: str = "KR") -> dict:
 # Search services
 # ---------------------------------------------------------------------------
 def search_domestic_patents(query: str, top_n: int = 20) -> list[dict]:
-    """Free-text search of Korean patents/utility models (getWordSearch)."""
-    root = _request("getWordSearch", {"word": query, "numOfRows": top_n, "pageNo": 1})
+    """Free-text search of Korean patents/utility models.
+
+    Default operation: patUtiModInfoSearchSevice/freeSearchInfo with ``word``.
+    """
+    root = _request(
+        _search_op(),
+        {"word": query, "patent": "true", "utility": "true", "pageNo": 1},
+    )
     return [normalize_patent_result(it, country="KR") for it in _iter_items(root)]
 
 
@@ -160,7 +172,7 @@ def search_foreign_patents(query: str, top_n: int = 20) -> list[dict]:
 def get_patent_bibliography(application_no: str) -> dict:
     """Detailed bibliographic info for one application."""
     root = _request(
-        "getBibliographyDetailInfoSearch", {"applicationNumber": application_no}
+        DEFAULT_DETAIL_OP, {"applicationNumber": application_no}
     )
     items = _iter_items(root)
     return normalize_patent_result(items[0], country="KR") if items else {}
@@ -175,7 +187,7 @@ def get_patent_claims(application_no: str) -> str:
     """
     try:
         root = _request(
-            "getBibliographyDetailInfoSearch", {"applicationNumber": application_no}
+            DEFAULT_DETAIL_OP, {"applicationNumber": application_no}
         )
     except KiprisError:
         return ""
@@ -191,7 +203,7 @@ def get_patent_drawings(application_no: str) -> list[str]:
     """Drawing image URLs / metadata for one application (URLs only)."""
     try:
         root = _request(
-            "getBibliographyDetailInfoSearch", {"applicationNumber": application_no}
+            DEFAULT_DETAIL_OP, {"applicationNumber": application_no}
         )
     except KiprisError:
         return []
@@ -264,16 +276,19 @@ def test_connection() -> tuple[bool, str]:
     if not key:
         return False, "미연결: API Key가 설정되지 않았습니다."
 
+    # (service, operation, key_param) combinations, most likely first.
     combos = [
-        ("patUtiliInfoSearchSevice", "accessKey"),
-        ("patUtiliInfoSearchSevice", "ServiceKey"),
-        ("patUtilityInfoSearchService", "accessKey"),
-        ("patUtilityInfoSearchService", "ServiceKey"),
+        ("patUtiModInfoSearchSevice", "freeSearchInfo", "accessKey"),
+        ("patUtiModInfoSearchSevice", "getWordSearch", "accessKey"),
+        ("patUtiModInfoSearchSevice", "getAdvancedSearch", "accessKey"),
+        ("patUtiliInfoSearchSevice", "freeSearchInfo", "accessKey"),
+        ("patUtiModInfoSearchSevice", "freeSearchInfo", "ServiceKey"),
     ]
     last_detail = ""
-    for service, key_param in combos:
-        url = f"{BASE_URL}/{service}/getWordSearch"
-        params = {"word": "전기", "numOfRows": 1, "pageNo": 1, key_param: key}
+    for service, op, key_param in combos:
+        url = f"{BASE_URL}/{service}/{op}"
+        params = {"word": "전기", "patent": "true", "utility": "true",
+                  "pageNo": 1, key_param: key}
         try:
             r = requests.get(url, params=params, timeout=TIMEOUT)
         except requests.RequestException as exc:
@@ -282,9 +297,8 @@ def test_connection() -> tuple[bool, str]:
         try:
             root = ET.fromstring(r.content)
         except ET.ParseError:
-            last_detail = f"HTTP {r.status_code} · {r.text[:120].strip()}"
+            last_detail = f"HTTP {r.status_code} · {r.text[:110].strip()}"
             continue
-        # Check for an explicit error code with no items.
         items = _iter_items(root)
         codes = [
             e.text.strip()
@@ -297,11 +311,15 @@ def test_connection() -> tuple[bool, str]:
             if _local(e.tag) in ("resultMsg", "message") and e.text
         ]
         bad = codes and codes[0].lower() not in {"00", "000", "0", "success", "ok", "y", "true"}
-        if items or (not bad and root is not None and not msgs):
+        if items or (not bad and not msgs):
             config.set("kipris_service", service)
+            config.set("kipris_search_op", op)
             config.set("kipris_key_param", key_param)
-            return True, f"연결됨 · 서비스 {service}, 파라미터 {key_param}"
-        last_detail = f"code={codes[0] if codes else '?'} msg={msgs[0] if msgs else '?'}"
+            return True, f"연결됨 · {service}/{op} (param={key_param}, 결과 {len(items)}건)"
+        last_detail = (
+            f"{service}/{op}: code={codes[0] if codes else '?'} "
+            f"msg={msgs[0] if msgs else '응답에 item 없음'}"
+        )
 
     return False, (
         "오류: 동작하는 설정을 찾지 못했습니다. 키/권한을 확인하세요. "

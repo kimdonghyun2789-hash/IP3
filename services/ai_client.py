@@ -79,6 +79,12 @@ def generate(prompt: str, system: str = "", json_mode: bool = False) -> str:
     except AIError:
         raise
     except Exception as exc:  # convert every provider/network error to AIError
+        msg = str(exc)
+        if "429" in msg or "quota" in msg.lower() or "exhausted" in msg.lower():
+            raise AIError(
+                f"{provider} 사용량 한도 초과(429): 무료 한도/요청 빈도를 확인하세요. "
+                "잠시 후 다시 시도하거나 다른 모델을 사용하세요."
+            ) from exc
         raise AIError(f"{provider} 호출 실패: {_short(exc)}") from exc
     raise AIError(f"지원하지 않는 Provider: {provider}")
 
@@ -113,14 +119,24 @@ def _generate_gemini(prompt: str, system: str, key: str, json_mode: bool) -> str
             "google-generativeai 패키지가 설치되지 않았습니다. "
             "(pip install google-generativeai)"
         ) from exc
+    import time
+
     genai.configure(api_key=key)
     model_name = _resolve_gemini_model(genai)
     gen_config = {"response_mime_type": "application/json"} if json_mode else None
-    model = genai.GenerativeModel(
-        model_name, system_instruction=system or None
-    )
-    resp = model.generate_content(prompt, generation_config=gen_config)
-    return getattr(resp, "text", "") or ""
+    model = genai.GenerativeModel(model_name, system_instruction=system or None)
+    # Retry once on a transient rate-limit (free tier requests-per-minute).
+    for attempt in range(2):
+        try:
+            resp = model.generate_content(prompt, generation_config=gen_config)
+            return getattr(resp, "text", "") or ""
+        except Exception as exc:  # noqa: BLE001
+            transient = "429" in str(exc) or "quota" in str(exc).lower()
+            if transient and attempt == 0:
+                time.sleep(3)
+                continue
+            raise
+    return ""
 
 
 def _resolve_gemini_model(genai) -> str:

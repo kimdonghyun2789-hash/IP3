@@ -94,11 +94,18 @@ CSS = """
     "Segoe UI",-apple-system,sans-serif;
 }
 
-/* Consistent base typography across all Streamlit text */
-html, body, .stApp, [class*="st-"], .stMarkdown, .stMarkdown p,
-.stTextInput, .stTextArea, .stSelectbox, .stRadio, .stButton,
+/* Consistent base typography (icons are preserved below) */
+html, body, .stApp, .stMarkdown, .stMarkdown p,
+.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"],
+.stRadio, .stButton button, .stDownloadButton button, h1, h2, h3, h4,
 section[data-testid="stSidebar"] {
   font-family: var(--ip3-font);
+}
+/* Do NOT override Material/icon fonts (fixes 'keyboard_double_arrow' text) */
+[data-testid="stIconMaterial"], .material-icons, .material-icons-outlined,
+.material-symbols-rounded, .material-symbols-outlined {
+  font-family: 'Material Symbols Rounded','Material Symbols Outlined',
+    'Material Icons','Material Icons Outlined' !important;
 }
 .stApp { color: var(--ip3-text); }
 .stMarkdown p { font-size: 14px; line-height: 1.6; margin-bottom: .35rem; }
@@ -115,13 +122,15 @@ h1, h2, h3, h4 { color: var(--ip3-text); letter-spacing: -.2px; }
   font-size: 12.5px !important; color: var(--ip3-muted) !important; line-height: 1.5; }
 
 /* Brand mark in sidebar */
-.ip3-brand { font-size: 28px; font-weight: 800; letter-spacing:-.5px;
-  color: var(--ip3-primary); margin: 2px 0 0 2px; line-height: 1; }
-.ip3-brand span { font-size: 16px; vertical-align: super; }
-.ip3-cube { font-size: 12px; font-weight: 700; color: var(--ip3-text);
-  letter-spacing: 2px; margin: 2px 0 6px 3px; }
-.ip3-tagline { font-size: 11px; color: var(--ip3-muted); line-height: 1.55;
-  margin: 0 0 12px 3px; }
+.ip3-brand { font-size: 30px; font-weight: 800; letter-spacing:-.5px;
+  color: var(--ip3-primary); margin: 6px 0 0 2px; line-height: 1; }
+.ip3-brand sup { font-size: 17px; font-weight: 800; top: -.5em; }
+.ip3-brand-sub { font-size: 11px; font-weight: 700; letter-spacing: 3px;
+  color: var(--ip3-muted); margin: 5px 0 12px 3px; }
+.ip3-tagline { margin: 0 0 14px 3px;
+  border-left: 2px solid var(--ip3-border); padding-left: 9px; }
+.ip3-tagline div { font-size: 11.5px; color: var(--ip3-muted); line-height: 1.75; }
+.ip3-tagline b { color: var(--ip3-text); font-weight: 600; }
 
 /* Sidebar */
 section[data-testid="stSidebar"] { background: var(--ip3-soft);

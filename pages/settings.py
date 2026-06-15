@@ -31,29 +31,36 @@ def render() -> None:
 # ---------------------------------------------------------------------------
 def _api_settings() -> None:
     st.caption("KIPRISPlus API Key는 특허 검색 및 상세정보 조회에 사용됩니다.")
-    st.caption("AI API Key는 'AI 설정' 탭에서 입력합니다.")
+    st.caption("AI API Key는 선택 특허 비교분석에 사용됩니다. (Provider/모델 선택은 'AI 설정' 탭)")
 
     kipris = st.text_input(
         "KIPRISPlus API Key", value=config.get("kiprisplus_api_key", ""),
         type="password", key="set_kipris",
     )
+    ai_key = st.text_input(
+        "AI API Key", value=config.get("ai_api_key", ""),
+        type="password", key="set_aikey1",
+    )
 
     cols = st.columns([1, 1, 4])
     if cols[0].button("저장", type="primary", key="api_save"):
         config.set("kiprisplus_api_key", kipris.strip())
-        layout.flash("KIPRISPlus API Key 저장됨")
+        config.set("ai_api_key", ai_key.strip())
+        layout.flash("API Key 저장됨")
         st.rerun()
     if cols[1].button("연결 테스트", key="api_test"):
         with st.spinner("연결을 확인하고 있습니다…"):
             k_ok, k_msg = kiprisplus_client.test_connection()
+            a_ok, a_msg = ai_client.test_connection()
         st.markdown(f"**KIPRISPlus:** {'🟢' if k_ok else '🔴'} {k_msg}")
+        st.markdown(f"**AI Provider:** {'🟢' if a_ok else '🔴'} {a_msg}")
 
     st.markdown("<hr/>", unsafe_allow_html=True)
     k_state = "🟢 키 입력됨" if config.has_kiprisplus() else "⚪ 미입력 (샘플 데이터 모드)"
     a_state = "🟢 키 입력됨" if config.has_ai() else "⚪ 미입력 (휴리스틱 비교)"
     st.markdown(f"**KIPRISPlus:** {k_state}")
-    st.markdown(f"**AI Provider:** {a_state}  ·  키 입력은 'AI 설정' 탭")
-    st.caption("실제 연결 가능 여부는 위의 **연결 테스트**(KIPRISPlus), 'AI 설정' 탭의 **연결 테스트**(AI)로 확인하세요.")
+    st.markdown(f"**AI Provider:** {a_state}")
+    st.caption("실제 연결 가능 여부는 위의 **연결 테스트**로 확인하세요.")
 
 
 def _search_settings() -> None:
@@ -84,14 +91,12 @@ def _search_settings() -> None:
 
 
 def _ai_settings() -> None:
+    st.caption("AI API Key 입력은 'API 설정' 탭에서 합니다. 여기서는 Provider·모델·항목을 설정합니다.")
     provider = st.selectbox(
         "AI Provider", config.AI_PROVIDERS,
         index=config.AI_PROVIDERS.index(config.get_ai_provider())
         if config.get_ai_provider() in config.AI_PROVIDERS else 4,
         key="set_provider",
-    )
-    ai_key = st.text_input(
-        "AI API Key", value=config.get("ai_api_key", ""), type="password", key="set_aikey2",
     )
     ai_model = st.text_input(
         "AI 모델 (선택)", value=config.get("ai_model", ""), key="set_aimodel",
@@ -109,7 +114,6 @@ def _ai_settings() -> None:
     cols = st.columns([1, 1, 4])
     if cols[0].button("저장", type="primary", key="ai_save"):
         config.set("ai_provider", provider)
-        config.set("ai_api_key", ai_key.strip())
         config.set("ai_model", ai_model.strip())
         config.set("ai_fields", ",".join(chosen))
         layout.flash("AI 설정 저장됨")
